@@ -1,0 +1,105 @@
+To create a health monitoring system using NodeMCU and Blynk server, you'll need to follow these steps:
+
+1.Install the necessary libraries:
+
+	=>Install the Blynk library by going to Sketch -> Include Library -> Manage Libraries in the Arduino IDE and searching for "Blynk" to install it.
+
+2.Set up Blynk:
+
+	=>Create a new Blynk project on the Blynk app (available for iOS and Android) and obtain an authentication token.
+	=>Add the required widgets in the Blynk app to display health-related data, such as Value Display, Gauge, or Graph.
+
+3.Connect the hardware:
+
+	=>Connect the health monitoring sensors (heart rate sensor, temperature sensor) to the NodeMCU board based on their specific wiring requirements.
+
+4.Use the following code as an example to implement the health monitoring system using NodeMCU and Blynk server:
+
+
+------------------------------------------------------------------
+
+#include <ESP8266WiFi.h>
+#include <BlynkSimpleEsp8266.h>
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_MLX90614.h>
+#include <PulseSensorPlayground.h>
+
+// WiFi credentials
+char auth[] = "YOUR_AUTH_TOKEN";
+char ssid[] = "YOUR_WIFI_SSID";
+char pass[] = "YOUR_WIFI_PASSWORD";
+
+// Blynk virtual pin numbers
+#define HEART_RATE_VIRTUAL_PIN V1
+#define BODY_TEMPERATURE_VIRTUAL_PIN V2
+
+// Pulse sensor setup
+const int pulseSensorPin = A0;
+const int blinkPin = 13;
+
+PulseSensorPlayground pulseSensor;
+int heartRate;
+
+// Body temperature sensor setup
+Adafruit_MLX90614 mlx = Adafruit_MLX90614();
+
+void setup()
+{
+  // Start the serial communication
+  Serial.begin(9600);
+
+  // Connect to the Wi-Fi network
+  Blynk.begin(auth, ssid, pass);
+
+  // Initialize the pulse sensor
+  pulseSensor.analogInput(pulseSensorPin);
+  pulseSensor.blinkOnPulse(blinkPin);
+  pulseSensor.setThreshold(550);
+
+  // Initialize the body temperature sensor
+  mlx.begin();
+}
+
+void loop()
+{
+  Blynk.run();
+
+  // Read heart rate from the pulse sensor
+  if (pulseSensor.sawNewSample())
+  {
+    int heartRate = pulseSensor.getBeatsPerMinute();
+    Blynk.virtualWrite(HEART_RATE_VIRTUAL_PIN, heartRate);
+  }
+
+  // Read body temperature from the MLX90614 sensor
+  float bodyTemperature = mlx.readObjectTempC();
+  Blynk.virtualWrite(BODY_TEMPERATURE_VIRTUAL_PIN, bodyTemperature);
+
+  // Print data to the serial monitor
+  Serial.print("Heart Rate: ");
+  Serial.println(heartRate);
+  Serial.print("Body Temperature: ");
+  Serial.print(bodyTemperature);
+  Serial.println(" °C");
+
+  delay(10);
+}
+
+
+------------------------------------------------------------------
+
+
+In this code, we use the PulseSensorPlayground library for the heartbeat sensor, PulseSensor.h library for the pulse sensor, and Adafruit MLX90614 library for the body temperature sensor.
+
+Replace 'YOUR_AUTH_TOKEN' with the authentication token obtained from the Blynk project. Also, replace 'YOUR_WIFI_SSID' and 'YOUR_WIFI_PASSWORD' with your Wi-Fi network credentials.
+
+The setup() function initializes the serial communication, connects to the Wi-Fi network, and initializes the pulse sensor and body temperature sensor.
+
+The loop() function reads the heart rate from the pulse sensor using pulseSensor.getBeatsPerMinute() and sends it to the Blynk app using Blynk.virtualWrite() for the heart rate virtual pin.
+
+The loop() function also reads the body temperature from the MLX90614 sensor using mlx.readObjectTempC() and sends it to the Blynk app using Blynk.virtualWrite() for the body temperature virtual pin.
+
+The data is also printed to the serial monitor for debugging purposes.
+
+Make sure you have the necessary libraries installed in your Arduino IDE before uploading the code to the NodeMCU board.
